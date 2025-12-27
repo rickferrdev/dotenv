@@ -15,7 +15,7 @@ A lightweight, zero-dependency Go package for loading environment variables from
 ## Installation
 
 ```bash
-go get [github.com/rickferrdev/dotenv](https://github.com/rickferrdev/dotenv)
+go get github.com/rickferrdev/dotenv
 ```
 
 ## Usage
@@ -39,7 +39,7 @@ package main
 import (
     "fmt"
     "os"
-    "[github.com/rickferrdev/dotenv](https://github.com/rickferrdev/dotenv)"
+    "github.com/rickferrdev/dotenv"
 )
 
 func main() {
@@ -62,7 +62,7 @@ package main
 import (
     "fmt"
     "log"
-    "[github.com/rickferrdev/dotenv](https://github.com/rickferrdev/dotenv)"
+    "github.com/rickferrdev/dotenv"
 )
 
 type Config struct {
