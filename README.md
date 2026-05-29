@@ -6,6 +6,7 @@ A lightweight, zero-dependency Go package for loading environment variables from
 
 * **File Priority**: Automatically loads `.env` and overrides with `.env.local` if present.
 * **Struct Mapping**: Unmarshal environment variables directly into strict-typed Go structs.
+* **Required and Default Values**: Use struct tags to require values or provide fallbacks.
 * **Env Generation**: Marshal structs back into `.env` formatted strings.
 * **Shell Support**: Recognizes the `export` keyword.
 * **Comment Handling**: Ignores lines starting with `#` and strips inline comments.
@@ -66,9 +67,9 @@ import (
 )
 
 type Config struct {
-    Port      int     `env:"PORT"`
-    DbURL     string  `env:"DB_URL"`
-    Debug     bool    `env:"DEBUG"`
+    Port      int     `env:"PORT" default:"8080"`
+    DbURL     string  `env:"DB_URL" required:"true"`
+    Debug     bool    `env:"DEBUG" default:"false"`
     RateLimit float64 `env:"RATE_LIMIT"`
 }
 
@@ -108,6 +109,20 @@ fmt.Println(string(data))
 // ...
 ```
 
+### Struct Tag Options
+
+The `env` tag defines the environment variable name. You can also add:
+
+* `required:"true"` to return an error when the value is missing or empty.
+* `default:"value"` to use a fallback when the value is missing or empty.
+
+```go
+type Config struct {
+    Token string `env:"TOKEN" required:"true"`
+    Port  int    `env:"PORT" default:"8080"`
+}
+```
+
 ## Configuration
 
 You can override the files the package looks for by modifying the `FilenameVariables` slice before calling `Collect`.
@@ -121,5 +136,5 @@ dotenv.Collect()
 ## How it Works
 
 * **`Collect()`**: Iterates through `FilenameVariables`. It parses each line, strips `export` prefixes, handles quotes, cleans comments, and sets values using `os.Setenv`.
-* **`Unmarshal()`**: Uses Go reflection to inspect struct tags (`env:"KEY"`) and automatically converts string environment values into the appropriate Go types (`int`, `bool`, `float`, `string`).
+* **`Unmarshal()`**: Uses Go reflection to inspect struct tags (`env:"KEY"`, `required:"true"`, and `default:"value"`) and automatically converts string environment values into the appropriate Go types (`int`, `bool`, `float`, `string`).
 * **`Marshal()`**: Reads the struct values and tags to generate a key-value string suitable for `.env` files.

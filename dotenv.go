@@ -58,7 +58,6 @@ func Collect() {
 // The struct must have 'env' tags defining which variables to map.
 func Unmarshal(dest interface{}) error {
 	rv := reflect.ValueOf(dest)
-
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
 		return errors.New("dest must be a non-nil pointer")
 	}
@@ -69,7 +68,6 @@ func Unmarshal(dest interface{}) error {
 	}
 
 	t := rv.Type()
-
 	for i := 0; i < rv.NumField(); i++ {
 		field := rv.Field(i)
 		fieldType := t.Field(i)
@@ -79,13 +77,22 @@ func Unmarshal(dest interface{}) error {
 		}
 
 		key := fieldType.Tag.Get("env")
+		required := fieldType.Tag.Get("required") == "true"
+		defaultValue := fieldType.Tag.Get("default")
+
 		if key == "" {
 			continue
 		}
 
-		value := os.Getenv(key)
-		if value == "" {
-			continue
+		value, exists := os.LookupEnv(key)
+		if !exists || value == "" {
+			if defaultValue != "" {
+				value = defaultValue
+			} else if required {
+				return fmt.Errorf("error %s tag needs to be filled in", fieldType.Name)
+			} else {
+				continue
+			}
 		}
 
 		if err := setField(field, value); err != nil {
@@ -115,6 +122,9 @@ func Marshal(dest interface{}) ([]byte, error) {
 	for i := 0; i < rv.NumField(); i++ {
 		field := rv.Field(i)
 		fieldType := t.Field(i)
+		if !field.CanInterface() {
+			continue
+		}
 
 		key := fieldType.Tag.Get("env")
 		if key == "" {
@@ -122,6 +132,15 @@ func Marshal(dest interface{}) ([]byte, error) {
 		}
 
 		value := fmt.Sprintf("%v", field.Interface())
+
+		if value == "" {
+			defaultValue := fieldType.Tag.Get("default")
+			if defaultValue != "" {
+				value = defaultValue
+			} else if fieldType.Tag.Get("required") == "true" {
+				return nil, fmt.Errorf("env %s for field %s is required", key, fieldType.Name)
+			}
+		}
 
 		if strings.Contains(value, " ") {
 			value = fmt.Sprintf(`"%s"`, value)
